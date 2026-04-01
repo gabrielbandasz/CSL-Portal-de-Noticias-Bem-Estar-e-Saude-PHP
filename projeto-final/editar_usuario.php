@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 require_once 'conexao.php';
 require_once 'funcoes.php';
 require_once 'verifica_login.php';

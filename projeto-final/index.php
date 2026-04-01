@@ -5,10 +5,17 @@ require_once 'funcoes.php';
 $pagina_atual = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $noticia_por_pagina = 5;
 
-$noticias = listar_noticias($conexao, $noticia_por_pagina, $pagina_atual);
-$total_noticias = contar_noticias($conexao);
-$total_paginas = ceil($total_noticias / $noticia_por_pagina);
+// PRIMEIRO PEGA O TERMO
+$termo_busca = isset($_GET['busca']) ? trim($_GET['busca']) : '';
 
+// DEPOIS USA ELE
+if (!empty($termo_busca)) {
+    $noticias = buscar_noticias($conexao, $termo_busca, $noticia_por_pagina, $pagina_atual);
+    $total_noticias = contar_busca($conexao, $termo_busca);
+} else {
+    $noticias = listar_noticias($conexao, $noticia_por_pagina, $pagina_atual);
+    $total_noticias = contar_noticias($conexao);
+}
 // Pega usuário logado (pra foto no header)
 $usuario = null;
 if (usuario_logado()) {
@@ -33,28 +40,41 @@ if (usuario_logado()) {
             <div class="logo">
                 <h1>Saúde & Bem-Estar</h1>
             </div>
-
             <nav class="nav">
-                <a href="index.php" class="nav-link active">Início</a>
 
+                <form method="GET" action="index.php" class="busca-form">
+                    <div class="busca-container">
+                        <span class="icone-busca">🔍</span>
+                        <input
+                            type="text"
+                            name="busca"
+                            class="busca-input"
+                            placeholder="Buscar notícias..."
+                            value="<?php echo isset($_GET['busca']) ? sanitizar($_GET['busca']) : ''; ?>">
+                        <?php if (!empty($_GET['busca'])): ?>
+                            <a href="index.php" class="busca-limpar">✕</a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+
+                <a href="index.php" class="nav-link">Início</a>
+                <a href="dashboard.php" class="nav-link">Dashboard</a>
                 <?php if (usuario_logado()): ?>
                     <span class="user-info">
-
                         <?php if (!empty($usuario['foto'])): ?>
-                            <img src="<?php echo $usuario['foto']; ?>"
-                                style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                            <img src="<?php echo sanitizar($usuario['foto']); ?>"
+                                style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:4px;">
                         <?php endif; ?>
-
                         Olá, <?php echo sanitizar($_SESSION['usuario_nome']); ?>
                     </span>
 
-                    <a href="dashboard.php" class="nav-link">Dashboard</a>
-                    <a href="nova_noticia.php" class="nav-link btn-primary">+ Nova Notícia</a>
-                    <a href="logout.php" class="nav-link btn-danger">Logout</a>
+                    <a href="nova_noticia.php" class="btn-primary btn-small">+ Nova Notícia</a>
+                    <a href="logout.php" class="btn-danger btn-small">Logout</a>
                 <?php else: ?>
                     <a href="login.php" class="nav-link">Login</a>
-                    <a href="cadastro.php" class="nav-link btn-primary">Cadastro</a>
+                    <a href="cadastro.php" class="btn-primary btn-small">Cadastro</a>
                 <?php endif; ?>
+
             </nav>
         </div>
     </header>

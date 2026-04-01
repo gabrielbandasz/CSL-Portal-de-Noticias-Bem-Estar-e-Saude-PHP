@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Evita redeclaração
 if (defined('FUNCOES_CARREGADAS')) return;
 define('FUNCOES_CARREGADAS', true);
@@ -9,7 +12,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 /* ===================== VALIDAÇÃO ===================== */
-function validar_formulario($dados) {
+function validar_formulario($dados)
+{
     $erros = [];
 
     if (isset($dados['nome']) && empty(trim($dados['nome']))) {
@@ -44,19 +48,23 @@ function validar_formulario($dados) {
 }
 
 /* ===================== AUTENTICAÇÃO ===================== */
-function criptografar_senha($senha) {
+function criptografar_senha($senha)
+{
     return password_hash($senha, PASSWORD_BCRYPT);
 }
 
-function verificar_senha($senha, $hash) {
+function verificar_senha($senha, $hash)
+{
     return password_verify($senha, $hash);
 }
 
-function usuario_logado() {
+function usuario_logado()
+{
     return isset($_SESSION['usuario_id']);
 }
 
-function fazer_login($conexao, $email, $senha) {
+function fazer_login($conexao, $email, $senha)
+{
     $email = $conexao->real_escape_string($email);
 
     $sql = "SELECT * FROM usuarios WHERE email = '$email' AND ativo = TRUE";
@@ -75,20 +83,23 @@ function fazer_login($conexao, $email, $senha) {
     return false;
 }
 
-function fazer_logout() {
+function fazer_logout()
+{
     session_destroy();
     header("Location: index.php");
     exit();
 }
 
 /* ===================== USUÁRIOS ===================== */
-function obter_usuario($conexao, $id) {
+function obter_usuario($conexao, $id)
+{
     $id = (int)$id;
     $res = $conexao->query("SELECT * FROM usuarios WHERE id = $id");
     return $res->fetch_assoc();
 }
 
-function criar_usuario($conexao, $nome, $email, $senha) {
+function criar_usuario($conexao, $nome, $email, $senha)
+{
     $nome = $conexao->real_escape_string($nome);
     $email = $conexao->real_escape_string($email);
     $senha = criptografar_senha($senha);
@@ -104,7 +115,8 @@ function criar_usuario($conexao, $nome, $email, $senha) {
         : ["sucesso" => false, "mensagem" => "Erro ao criar"];
 }
 
-function atualizar_usuario($conexao, $id, $nome, $email, $foto = null) {
+function atualizar_usuario($conexao, $id, $nome, $email, $foto = null)
+{
     $id = (int)$id;
     $nome = $conexao->real_escape_string($nome);
     $email = $conexao->real_escape_string($email);
@@ -132,15 +144,67 @@ function atualizar_usuario($conexao, $id, $nome, $email, $foto = null) {
     return ["sucesso" => false, "mensagem" => "Erro ao atualizar"];
 }
 
-function deletar_usuario($conexao, $id) {
+function deletar_usuario($conexao, $id)
+{
     $id = (int)$id;
     return $conexao->query("UPDATE usuarios SET ativo=FALSE WHERE id=$id")
         ? ["sucesso" => true, "mensagem" => "Conta deletada"]
         : ["sucesso" => false, "mensagem" => "Erro"];
 }
 
+/* ===================== BUSCA ===================== */
+function buscar_noticias($conexao, $termo, $limite = 10, $pagina = 1)
+{
+    $termo = $conexao->real_escape_string($termo);
+    $offset = ($pagina - 1) * $limite;
+
+    $sql = "SELECT n.*, u.nome AS nome_autor, u.foto AS foto_autor
+            FROM noticias n
+            JOIN usuarios u ON n.autor = u.id
+            WHERE n.titulo LIKE '%$termo%' 
+               OR n.noticia LIKE '%$termo%'
+               OR u.nome LIKE '%$termo%'
+            ORDER BY n.data DESC
+            LIMIT $limite OFFSET $offset";
+
+    $res = $conexao->query($sql);
+
+    if (!$res) {
+        die("Erro na busca: " . $conexao->error);
+    }
+
+    $dados = [];
+
+    while ($row = $res->fetch_assoc()) {
+        $dados[] = $row;
+    }
+
+    return $dados;
+}
+
+function contar_busca($conexao, $termo)
+{
+    $termo = $conexao->real_escape_string($termo);
+
+    $sql = "SELECT COUNT(*) total 
+            FROM noticias n
+            JOIN usuarios u ON n.autor = u.id
+            WHERE n.titulo LIKE '%$termo%' 
+               OR n.noticia LIKE '%$termo%' 
+               OR u.nome LIKE '%$termo%'";
+
+    $res = $conexao->query($sql);
+
+    if (!$res) {
+        die("Erro ao contar busca: " . $conexao->error);
+    }
+
+    return $res->fetch_assoc()['total'];
+}
+
 /* ===================== NOTÍCIAS ===================== */
-function criar_noticia($conexao, $titulo, $conteudo, $autor, $imagem = null) {
+function criar_noticia($conexao, $titulo, $conteudo, $autor, $imagem = null)
+{
     $titulo = $conexao->real_escape_string($titulo);
     $conteudo = $conexao->real_escape_string($conteudo);
     $autor = (int)$autor;
@@ -155,7 +219,8 @@ function criar_noticia($conexao, $titulo, $conteudo, $autor, $imagem = null) {
         : ["sucesso" => false];
 }
 
-function listar_noticias($conexao, $limite = 10, $pagina = 1) {
+function listar_noticias($conexao, $limite = 10, $pagina = 1)
+{
     $offset = ($pagina - 1) * $limite;
 
     $sql = "SELECT n.*, u.nome AS nome_autor, u.foto AS foto_autor
@@ -174,12 +239,14 @@ function listar_noticias($conexao, $limite = 10, $pagina = 1) {
     return $dados;
 }
 
-function contar_noticias($conexao) {
+function contar_noticias($conexao)
+{
     $res = $conexao->query("SELECT COUNT(*) total FROM noticias");
     return $res->fetch_assoc()['total'];
 }
 
-function obter_noticias_autor($conexao, $id) {
+function obter_noticias_autor($conexao, $id)
+{
     $id = (int)$id;
 
     $sql = "SELECT n.*, u.nome as nome_autor, u.foto as foto_autor 
@@ -197,7 +264,8 @@ function obter_noticias_autor($conexao, $id) {
     return $dados;
 }
 
-function obter_noticia($conexao, $id) {
+function obter_noticia($conexao, $id)
+{
     $id = (int)$id;
 
     $sql = "SELECT n.*, u.nome as nome_autor, u.foto as foto_autor 
@@ -206,10 +274,16 @@ function obter_noticia($conexao, $id) {
             WHERE n.id = $id";
 
     $resultado = $conexao->query($sql);
+
+    if (!$resultado) {
+        die("Erro ao buscar notícia: " . $conexao->error);
+    }
+
     return $resultado->fetch_assoc();
 }
 
-function atualizar_noticia($conexao, $id, $titulo, $conteudo, $imagem = null) {
+function atualizar_noticia($conexao, $id, $titulo, $conteudo, $imagem = null)
+{
     $id = (int)$id;
     $titulo = $conexao->real_escape_string($titulo);
     $conteudo = $conexao->real_escape_string($conteudo);
@@ -233,26 +307,34 @@ function atualizar_noticia($conexao, $id, $titulo, $conteudo, $imagem = null) {
 }
 
 /* ===================== UTIL ===================== */
-function formatar_data($data) {
+function formatar_data($data)
+{
     return date("d/m/Y H:i", strtotime($data));
 }
 
-function gerar_resumo($texto, $limite = 200) {
+function gerar_resumo($texto, $limite = 200)
+{
     $texto = strip_tags($texto);
     return strlen($texto) > $limite ? substr($texto, 0, $limite) . "..." : $texto;
 }
 
-function sanitizar($texto) {
+function sanitizar($texto)
+{
     return htmlspecialchars($texto, ENT_QUOTES, 'UTF-8');
 }
 
 /* ===================== UPLOAD ===================== */
-function fazer_upload_imagem($arquivo) {
-    $ext = ['jpg','jpeg','png','gif'];
+function fazer_upload_imagem($arquivo)
+{
+    if (!isset($arquivo['name']) || empty($arquivo['name'])) {
+        return ["sucesso" => false, "mensagem" => "Nenhuma imagem enviada"];
+    }
+
+    $ext = ['jpg', 'jpeg', 'png', 'gif'];
     $max = 5 * 1024 * 1024;
 
     $info = pathinfo($arquivo['name']);
-    $extensao = strtolower($info['extension']);
+    $extensao = strtolower($info['extension'] ?? '');
 
     if (!in_array($extensao, $ext)) {
         return ["sucesso" => false, "mensagem" => "Formato inválido"];
@@ -275,4 +357,19 @@ function fazer_upload_imagem($arquivo) {
 
     return ["sucesso" => false, "mensagem" => "Erro no upload"];
 }
-?>
+
+function deletar_noticia($conexao, $id)
+{
+    $id = (int)$id;
+
+    $sql = "DELETE FROM noticias WHERE id = $id";
+
+    if ($conexao->query($sql)) {
+        return ["sucesso" => true, "mensagem" => "Notícia deletada"];
+    }
+
+    return [
+        "sucesso" => false,
+        "mensagem" => "Erro ao deletar: " . $conexao->error
+    ];
+}

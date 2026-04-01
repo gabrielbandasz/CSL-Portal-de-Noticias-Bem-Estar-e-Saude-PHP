@@ -10,26 +10,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $titulo = $_POST['titulo'] ?? '';
     $noticia = $_POST['noticia'] ?? '';
     $imagem = null;
-    
+
     $erros = validar_formulario(['titulo' => $titulo, 'noticia' => $noticia]);
-    
+
     // Fazer upload de imagem se fornecida
     if (!empty($_FILES['imagem']['name'])) {
         $resultado_upload = fazer_upload_imagem($_FILES['imagem']);
         if ($resultado_upload['sucesso']) {
             $imagem = $resultado_upload['caminho'];
         } else {
-            $erros[] = $resultado_upload['mensagem'];
+            $erros[] = $resultado_upload['mensagem'] ?? 'Erro no upload da imagem.';
         }
     }
-    
+
     if (empty($erros)) {
         $resultado = criar_noticia($conexao, $titulo, $noticia, $_SESSION['usuario_id'], $imagem);
         if ($resultado['sucesso']) {
-            $sucesso = $resultado['mensagem'];
+            $sucesso = $resultado['mensagem'] ?? 'Notícia publicada com sucesso!';
             echo '<script>setTimeout(() => { window.location.href = "dashboard.php"; }, 2000);</script>';
         } else {
-            $erro = $resultado['mensagem'];
+            $erro = $resultado['mensagem'] ?? 'Erro ao publicar notícia.';
         }
     } else {
         $erro = implode('<br>', $erros);
@@ -39,12 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Publicar Notícia - Saúde e Bem-Estar</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -53,8 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <nav class="nav">
                 <a href="index.php" class="nav-link">Início</a>
-                <span class="user-info">Olá, <?php echo sanitizar($_SESSION['usuario_nome']); ?></span>
                 <a href="dashboard.php" class="nav-link">Dashboard</a>
+                <span class="user-info">
+                    <?php if (!empty($usuario['foto'])): ?>
+                        <img src="<?php echo $usuario['foto']; ?>"
+                            style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                    <?php endif; ?>
+                    Olá, <?php echo sanitizar($_SESSION['usuario_nome']); ?>
+                </span> <a href="nova_noticia.php" class="nav-link btn-primary">+ Nova Notícia</a>
                 <a href="logout.php" class="nav-link btn-danger">Logout</a>
             </nav>
         </div>
@@ -112,4 +120,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </footer>
 </body>
+
 </html>
