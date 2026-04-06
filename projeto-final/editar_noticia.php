@@ -1,7 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once 'conexao.php';
 require_once 'funcoes.php';
 require_once 'verifica_login.php';
@@ -24,11 +21,7 @@ if ($noticia['autor'] != $_SESSION['usuario_id']) {
     exit();
 }
 
-$usuario = null;
-if (usuario_logado()) {
-    $usuario = obter_usuario($conexao, $_SESSION['usuario_id']);
-}
-
+$usuario = obter_usuario($conexao, $_SESSION['usuario_id']);
 $erro = '';
 $sucesso = '';
 
@@ -37,10 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conteudo = trim($_POST['noticia'] ?? '');
     $imagem   = $noticia['imagem'];
 
-    $erros = validar_formulario([
-        'titulo'  => $titulo,
-        'noticia' => $conteudo
-    ]);
+    $erros = validar_formulario(['titulo' => $titulo, 'noticia' => $conteudo]);
 
     if (isset($_FILES['imagem']) && !empty($_FILES['imagem']['name'])) {
         $upload = fazer_upload_imagem($_FILES['imagem']);
@@ -85,26 +75,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <nav class="nav">
             <a href="index.php" class="nav-link">Início</a>
             <a href="dashboard.php" class="nav-link">Dashboard</a>
-            <?php if (usuario_logado()): ?>
-                <span class="user-info">
-                    <?php if (!empty($usuario['foto'])): ?>
-                        <img src="<?php echo sanitizar($usuario['foto']); ?>"
-                            style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:4px;">
-                    <?php endif; ?>
-                    Olá, <?php echo sanitizar($_SESSION['usuario_nome']); ?>
-                </span>
-                <a href="nova_noticia.php" class="btn-primary btn-small">+ Nova Notícia</a>
-                <a href="logout.php" class="btn-danger btn-small">Logout</a>
+            <?php if (usuario_adm()): ?>
+                <a href="admin.php" class="nav-link-adm">👑 Painel ADM</a>
             <?php endif; ?>
+            <span class="user-info">
+                <?php if (!empty($usuario['foto'])): ?>
+                    <img src="<?php echo sanitizar($usuario['foto']); ?>"
+                        style="width:26px; height:26px; border-radius:50%; object-fit:cover;">
+                <?php endif; ?>
+                Olá, <?php echo sanitizar($_SESSION['usuario_nome']); ?>
+            </span>
+            <a href="nova_noticia.php" class="btn-primary btn-small">+ Nova Notícia</a>
+            <a href="logout.php" class="btn-danger btn-small">Logout</a>
         </nav>
     </div>
 </header>
 
 <div class="editar-page">
     <div class="container">
-
-
-
         <div class="editar-card">
 
             <div class="editar-card-header">
@@ -115,15 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="editar-card-body">
 
                 <?php if ($erro): ?>
-                    <div class="alert alert-danger" style="margin-bottom: 24px;">
-                        <?php echo $erro; ?>
-                    </div>
+                    <div class="alert alert-danger"><?php echo $erro; ?></div>
                 <?php endif; ?>
-
                 <?php if ($sucesso): ?>
-                    <div class="alert alert-success" style="margin-bottom: 24px;">
-                        <?php echo $sucesso; ?>
-                    </div>
+                    <div class="alert alert-success">✅ <?php echo $sucesso; ?></div>
                 <?php endif; ?>
 
                 <form method="POST" enctype="multipart/form-data" class="form">
@@ -138,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="form-group">
                         <label>Conteúdo</label>
-                        <textarea name="noticia" rows="10" required
+                        <textarea name="noticia" rows="12" required
                             placeholder="Escreva o conteúdo da notícia..."><?php echo sanitizar($noticia['noticia']); ?></textarea>
                     </div>
 
@@ -157,13 +140,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endif; ?>
 
                     <div class="form-group">
-                        <label>Nova imagem <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--cor-texto-subtil);">(opcional)</span></label>
+                        <label>Nova imagem <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--cor-texto-subtil);">(opcional)</span></label>
                         <div class="upload-area">
                             <input type="file" name="imagem" accept="image/*">
                         </div>
-                        <small style="color:var(--cor-texto-subtil); font-size:11px; margin-top:6px; display:block;">
-                            Formatos aceitos: JPG, PNG, GIF, WEBP
-                        </small>
+                        <small>Formatos aceitos: JPG, PNG, GIF, WEBP</small>
                     </div>
 
                     <div class="editar-acoes">
@@ -174,9 +155,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
         </div>
-
     </div>
 </div>
+
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 Portal de Notícias - Saúde e Bem-Estar. Todos os direitos reservados.</p>
+    </div>
+</footer>
 
 </body>
 </html>

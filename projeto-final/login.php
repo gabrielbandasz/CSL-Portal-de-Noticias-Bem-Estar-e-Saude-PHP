@@ -2,20 +2,22 @@
 require_once 'conexao.php';
 require_once 'funcoes.php';
 
-$erro = '';
-$sucesso = '';
+$erro  = '';
+$aviso = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $senha = $_POST['senha'] ?? '';
-    
     $erros = validar_formulario(['email' => $email, 'senha' => $senha]);
-    
+
     if (empty($erros)) {
-        if (fazer_login($conexao, $email, $senha)) {
-            $redirect = $_GET['redirect'] ?? 'dashboard.php';
+        $resultado = fazer_login($conexao, $email, $senha);
+        if ($resultado === true) {
+            $redirect = $_GET['redirect'] ?? (usuario_adm() ? 'admin.php' : 'dashboard.php');
             header("Location: " . $redirect);
             exit();
+        } elseif ($resultado === 'aguardando') {
+            $aviso = "Sua conta ainda não foi aprovada pelo administrador. Aguarde a liberação do acesso.";
         } else {
             $erro = "Email ou senha incorretos";
         }
@@ -24,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -36,12 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <header class="header">
         <div class="container">
-            <div class="logo">
-                <h1>Saúde & Bem-Estar</h1>
-            </div>
+            <div class="logo"><h1>Saúde & Bem-Estar</h1></div>
             <nav class="nav">
                 <a href="index.php" class="nav-link">Início</a>
-                <a href="cadastro.php" class="nav-link btn-primary">Cadastro</a>
+                <a href="cadastro.php" class="btn-primary btn-small">Cadastro</a>
             </nav>
         </div>
     </header>
@@ -54,28 +53,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="form-descricao">Acesse sua conta para gerenciar suas notícias</p>
 
                     <?php if ($erro): ?>
-                        <div class="alert alert-danger">
-                            <?php echo $erro; ?>
-                        </div>
+                        <div class="alert alert-danger"><?php echo $erro; ?></div>
+                    <?php endif; ?>
+                    <?php if ($aviso): ?>
+                        <div class="alert alert-warning">⏳ <?php echo $aviso; ?></div>
                     <?php endif; ?>
 
                     <form method="POST" action="login.php" class="form">
                         <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" id="email" name="email" required value="<?php echo sanitizar($_POST['email'] ?? ''); ?>">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required
+                                value="<?php echo sanitizar($_POST['email'] ?? ''); ?>"
+                                placeholder="seu@email.com">
                         </div>
-
                         <div class="form-group">
-                            <label for="senha">Senha:</label>
-                            <input type="password" id="senha" name="senha" required>
+                            <label for="senha">Senha</label>
+                            <input type="password" id="senha" name="senha" required
+                                placeholder="••••••••">
                         </div>
-
                         <button type="submit" class="btn-primary btn-large">Entrar</button>
                     </form>
 
-                    <p class="form-link">
-                        Não tem uma conta? <a href="cadastro.php">Cadastre-se aqui</a>
-                    </p>
+                    <p class="form-link">Não tem uma conta? <a href="cadastro.php">Cadastre-se aqui</a></p>
                 </div>
             </section>
         </div>

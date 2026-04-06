@@ -22,7 +22,6 @@ if ($conexao_temp->connect_error) {
 $sql_criar_db = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
 if ($conexao_temp->query($sql_criar_db) === TRUE) {
     $conexao_temp->close();
-    // Reconectar ao banco de dados criado
     $conexao = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
     if ($conexao->connect_error) {
         die("Erro na reconexão: " . $conexao->connect_error);
@@ -31,7 +30,6 @@ if ($conexao_temp->query($sql_criar_db) === TRUE) {
     die("Erro ao criar banco de dados: " . $conexao_temp->error);
 }
 
-// Configurar character set para UTF-8
 $conexao->set_charset("utf8mb4");
 
 // Criar tabelas se não existirem
@@ -41,7 +39,10 @@ $sql_usuarios = "CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ativo BOOLEAN DEFAULT TRUE
+    ativo TINYINT(1) DEFAULT 1,
+    adm TINYINT(1) NOT NULL DEFAULT 0,
+    aprovado TINYINT(1) NOT NULL DEFAULT 0,
+    foto VARCHAR(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
 $sql_noticias = "CREATE TABLE IF NOT EXISTS noticias (
@@ -60,5 +61,15 @@ if (!$conexao->query($sql_usuarios)) {
 
 if (!$conexao->query($sql_noticias)) {
     echo "Aviso: Erro ao criar tabela noticias: " . $conexao->error . "<br>";
+}
+
+// Adicionar colunas adm e aprovado se não existirem (para bancos já criados)
+$cols = $conexao->query("SHOW COLUMNS FROM usuarios LIKE 'adm'");
+if ($cols && $cols->num_rows === 0) {
+    $conexao->query("ALTER TABLE usuarios ADD COLUMN adm TINYINT(1) NOT NULL DEFAULT 0 AFTER ativo");
+}
+$cols2 = $conexao->query("SHOW COLUMNS FROM usuarios LIKE 'aprovado'");
+if ($cols2 && $cols2->num_rows === 0) {
+    $conexao->query("ALTER TABLE usuarios ADD COLUMN aprovado TINYINT(1) NOT NULL DEFAULT 0 AFTER adm");
 }
 ?>
